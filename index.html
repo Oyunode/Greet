@@ -329,6 +329,11 @@ textarea::placeholder{color:var(--text3);}
       <hr class="divider"/>
       <div class="signals-lbl" id="signals-lbl">Илэрсэн шинж тэмдгүүд</div>
       <div id="signals-list"></div>
+      <!-- Recommendation block -->
+      <div id="recommendation-block" style="display:none;margin-top:1rem;background:var(--warning-bg);border:1px solid rgba(245,166,35,0.25);border-radius:var(--r);padding:12px 14px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--warning);margin-bottom:8px;font-weight:600;">⚠ Зөвлөмж</div>
+        <ul id="recommendation-list" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text2);line-height:1.6;"></ul>
+      </div>
       <!-- Feedback -->
       <div class="feedback-row">
         <span class="fb-label" id="fb-label">Дүгнэлт зөв үү?</span>
@@ -552,7 +557,15 @@ textarea::placeholder{color:var(--text3);}
 let currentLang  = 'mn';
 let currentMode  = 'zero';
 let currentResult = null;
-let DB = JSON.parse(localStorage.getItem('smishguard_db') || '[]');
+// Safe storage wrapper (works both in browser and iframe/preview)
+const _storage = {};
+const safeStorage = {
+  getItem(k){ try{ return localStorage.getItem(k); }catch(e){ return _storage[k]||null; } },
+  setItem(k,v){ try{ localStorage.setItem(k,v); }catch(e){ _storage[k]=v; } },
+  removeItem(k){ try{ localStorage.removeItem(k); }catch(e){ delete _storage[k]; } }
+};
+
+let DB = JSON.parse(safeStorage.getItem('smishguard_db') || '[]');
 let SESSION_HISTORY = [];
 
 // ══════════════════════════════════════════════
@@ -600,21 +613,55 @@ const T = {
       {label:'Нэвтрэх OTP',text:'Таны Google бүртгэлд шинэ нэвтрэлт Будапештаас илэрлээ. Та биш бол 228886257 дугаарт холбоо барина уу.'},
       {label:'Аюулгүй мессеж',text:'Сайн байна уу? Маргааш уулзах боломжтой юу? Цайны газар очицгооё.'}
     ],
-    systemPrompt:(mode)=> mode==='few'
-      ? `Та SMS луйвар илрүүлэх мэргэшсэн AI систем юм. Монгол хэлний дүгнэлт болон тайлбарыг зөв найруулга, байгалийн монгол хэлээр бичнэ үү. Техникийн нэр томьёог монголчилно уу. "Мессеж нь...", "Энэ мессеж..." гэх мэт байгалийн өгүүлбэрийн бүтцийг ашиглана уу.
+    systemPrompt:(mode)=> {
+      const base = `Та Монголын SMS луйвар (smishing) илрүүлэх мэргэшсэн AI систем юм.
+
+ИТГЭМЖЛЭГДСЭН ДОМЭЙНҮҮД — дараах домэйн бүхий холбоосыг аюулгүй гэж үзэж болно:
+mobicom.mn, mobicom-brand-application.web.app, unitel.mn, skytel.mn, gmobile.mn,
+golomtbank.mn, golomt.mn, khanbank.com, tdb.mn, xacbank.mn, statebank.mn,
+mongolbank.mn, mbank.mn, e-mongolia.mn, egazar.gov.mn, most.mn, play.google.com,
+apps.apple.com, appstore.com
+
+МОНГОЛЫН МОБАЙЛ ОПЕРАТОРУУДЫН ЕРДИЙН МЭДЭГДЛҮҮД (ихэвчлэн SAFE):
+— Дата багц идэвхжилт, данснаас хасагдлын мэдэгдэл
+— Үлдэгдэл, тарифын мэдэгдэл
+— App-руу чиглүүлэх (mobicom app, unitel app гэх мэт)
+— Дээрх итгэмжлэгдсэн домэйнтэй холбоос
+
+ЛУЙВРЫН ТОДОРХОЙ ШИНЖ ТЭМДГҮҮД:
+— Итгэмжлэгдсэн биш гадаад домэйн (жишээ: .tk, .ml, .cf, bit.ly, tinyurl гэх мэт)
+— Хувийн мэдээлэл, нэвтрэх нэр, нууц үг, OTP код шаардах
+— "Яаралтай", "шууд", "хугацаа дуусна", "хаагдана" гэх мэт дарамтлах үг
+— Хожлын мэдэгдэл, урамшуулал, шагналтай холбоотой хүсэлт
+
+ДҮГНЭЛТ ГАРГАХ ДҮРЭМ:
+— Итгэмжлэгдсэн домэйн + оператор мэдэгдлийн шинж → SAFE
+— Богиносгосон холбоос (bit.ly, tinyurl гэх мэт) → SUSPICIOUS эсвэл LIKELY_SCAM
+— Итгэмжлэгдээгүй домэйн + хувийн мэдээлэл шаардах → LIKELY_SCAM
+
+SIGNALS БИЧИХ ДҮРЭМ — дараах загваруудыг ЗААВАЛ мөрд:
+1. Хуурамч линк илэрсэн бол: "Энэ нь албан ёсны домэйн хаяг биш байна. Жинхэнэ домэйн хаяг бол [жинхэнэ домэйн]. Таныг луйврын вэбсайт руу чиглүүлэх магадлалтай байна."
+2. Богиносгосон холбоос байвал: "Богиносгосон холбоос ашигласан байна."
+3. Яаруулах агуулга байвал: "[яаруулах үг/хэллэг] гэсэн агуулга нь таныг яаралтай шийдвэр гаргахыг шаардаж байна."
+4. Итгэмжлэгдсэн домэйн байвал: "Итгэмжлэгдсэн [оператор/банкны нэр]-ийн домэйн хаяг байна."
+5. Оператор мэдэгдэл байвал: "Монголын мобайл операторын ердийн мэдэгдлийн шинж тэмдэгтэй байна."
+
+ЧУХАЛ: Монгол хэлний дүгнэлт болон тайлбарыг зөв найруулга, байгалийн монгол хэлээр бичнэ үү. Техникийн нэр томьёог монголчилно уу.`;
+
+      const fewShot = mode==='few' ? `
 
 Жишээнүүд:
-[SPAM] "Таны данс түдгэлзүүлэгдлээ. http://fake-bank.tk"
-[HAM]  "Маргааш уулзах боломжтой юу?"
-[SPAM] "Та 1,000,000₮ хожлоо! bit.ly/win"
-[HAM]  "Хичээл 10 цагт эхэлнэ."
+[SPAM] "Таны данс түдгэлзүүлэгдлээ. http://fake-mongol-bank.tk/verify" → LIKELY_SCAM
+[HAM]  "Танд 3GB дата багц идэвхжилээ. Үлдэгдлээ mobicom app-аар шалгана уу. https://mobicom-brand-application.web.app/" → SAFE
+[SPAM] "Та 1,000,000₮ хожлоо! bit.ly/win2024" → LIKELY_SCAM
+[HAM]  "Хичээл 10 цагт эхэлнэ." → SAFE
+[SUSPICIOUS] "Таны нууц үгийг шинэчлэх шаардлагатай. https://mongol-secure-login.com" → LIKELY_SCAM` : '';
 
-Зөвхөн JSON форматаар хариул (тайлбар бүрийг бүтэн монгол өгүүлбэрээр бич):
-{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"Нэг бүтэн монгол өгүүлбэрт ерөнхий дүгнэлт","signals":[{"type":"danger"|"warning"|"safe","text":"Бүтэн монгол өгүүлбэрт тайлбар"}]}`
-      : `Та SMS луйвар илрүүлэх мэргэшсэн AI систем юм. Монгол болон Англи хэлний мессежийг шинжилнэ. Монгол хэлний дүгнэлт болон тайлбарыг зөв найруулга, байгалийн монгол хэлээр бичнэ үү. Техникийн нэр томьёог монголчилно уу. "Мессеж нь...", "Энэ мессеж..." гэх мэт байгалийн өгүүлбэрийн бүтцийг ашиглана уу.
+      return base + fewShot + `
 
-Зөвхөн JSON форматаар хариул (тайлбар бүрийг бүтэн монгол өгүүлбэрээр бич):
-{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"Нэг бүтэн монгол өгүүлбэрт ерөнхий дүгнэлт","signals":[{"type":"danger"|"warning"|"safe","text":"Бүтэн монгол өгүүлбэрт тайлбар"}]}`
+Зөвхөн JSON форматаар хариул. Тайлбар, backtick, markdown бүү ашигла:
+{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"Нэг бүтэн монгол өгүүлбэрт ерөнхий дүгнэлт","signals":[{"type":"danger"|"warning"|"safe","text":"Бүтэн монгол өгүүлбэрт тайлбар"}]}`;
+    }
   },
   en:{
     detectSub:'Enter an SMS message to analyze for smishing',
@@ -704,7 +751,7 @@ const T = {
 //  INIT
 // ══════════════════════════════════════════════
 window.onload = ()=>{
-  const saved = localStorage.getItem('smishguard_key');
+  const saved = safeStorage.getItem('smishguard_key');
   if(saved) document.getElementById('apiKey').value = saved;
   applyTheme();
   renderExamples();
@@ -789,7 +836,7 @@ function setMode(mode, btn){
 // ══════════════════════════════════════════════
 //  THEME TOGGLE
 // ══════════════════════════════════════════════
-let isDark = localStorage.getItem('smishguard_theme') !== 'light';
+let isDark = safeStorage.getItem('smishguard_theme') !== 'light';
 
 function applyTheme(){
   if(isDark){
@@ -801,7 +848,7 @@ function applyTheme(){
     document.getElementById('theme-label').innerHTML =
       '<i class="ti ti-sun" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>Day mode';
   }
-  localStorage.setItem('smishguard_theme', isDark ? 'dark' : 'light');
+  safeStorage.setItem('smishguard_theme', isDark ? 'dark' : 'light');
 }
 
 function toggleTheme(){
@@ -818,10 +865,10 @@ function saveKey(){
     document.getElementById('api-status').innerHTML='<div class="status-err">Буруу формат. Түлхүүр sk-ant- гэж эхлэх ёстой.</div>';
     return;
   }
-  localStorage.setItem('smishguard_key', k);
+  safeStorage.setItem('smishguard_key', k);
   document.getElementById('api-status').innerHTML='<div class="status-ok">✓ Амжилттай хадгаллаа</div>';
 }
-function getKey(){ return localStorage.getItem('smishguard_key')||document.getElementById('apiKey').value.trim(); }
+function getKey(){ return safeStorage.getItem('smishguard_key')||document.getElementById('apiKey').value.trim(); }
 
 // ══════════════════════════════════════════════
 //  EXAMPLES
@@ -835,6 +882,44 @@ function renderExamples(){
 function loadEx(i){
   document.getElementById('msgInput').value = t().examples[i].text;
   document.getElementById('result-card').style.display='none';
+}
+
+// ══════════════════════════════════════════════
+//  TRUSTED DOMAIN / URL HELPERS
+// ══════════════════════════════════════════════
+const TRUSTED_DOMAINS = [
+  'mobicom.mn','mobicom-brand-application.web.app',
+  'unitel.mn','skytel.mn','gmobile.mn',
+  'golomtbank.mn','golomt.mn','khanbank.com','tdb.mn',
+  'xacbank.mn','statebank.mn','mongolbank.mn','mbank.mn',
+  'e-mongolia.mn','egazar.gov.mn','most.mn',
+  'play.google.com','apps.apple.com','appstore.com'
+];
+const SHORT_LINK_DOMAINS = ['bit.ly','tinyurl.com','t.co','goo.gl','ow.ly','short.io','rb.gy','is.gd','cutt.ly'];
+
+function extractUrls(msg){
+  return [...msg.matchAll(/https?:\/\/[^\s]+/gi)].map(m=>m[0]);
+}
+function getDomain(url){
+  try{ return new URL(url).hostname.replace(/^www\./,''); } catch(e){ return ''; }
+}
+function isTrustedDomain(d){ return TRUSTED_DOMAINS.some(t=>d===t||d.endsWith('.'+t)); }
+function isShortLink(d){ return SHORT_LINK_DOMAINS.includes(d); }
+
+function buildPreContext(msg){
+  const urls = extractUrls(msg);
+  if(!urls.length) return '';
+  const lines = [];
+  urls.forEach(u=>{
+    const d = getDomain(u);
+    if(isTrustedDomain(d))
+      lines.push('URL "' + u + '" — итгэмжлэгдсэн домэйн (' + d + ')');
+    else if(isShortLink(d))
+      lines.push('URL "' + u + '" — богиносгосон холбоос (' + d + '), жинхэнэ хаяг нуугдсан');
+    else
+      lines.push('URL "' + u + '" — итгэмжлэгдээгүй домэйн (' + d + ')');
+  });
+  return '\n\nURL шинжилгээний урьдчилсан үр дүн:\n' + lines.join('\n');
 }
 
 // ══════════════════════════════════════════════
@@ -870,7 +955,7 @@ async function analyze(){
         model:'claude-haiku-4-5-20251001',
         max_tokens:1000,
         system: sysPrompt,
-        messages:[{role:'user',content:`Classify this message:\n\n"${msg}"`}]
+        messages:[{role:'user',content:`Classify this message:\n\n"${msg}"${buildPreContext(msg)}`}]
       })
     });
     if(!resp.ok){ const e=await resp.json(); throw new Error(e.error?.message||'API алдаа'); }
@@ -919,6 +1004,37 @@ function showResult(r, msg){
     (r.signals||[]).map(s=>
       `<div class="signal-item"><span class="s-dot" style="background:${dotC[s.type]||'#888'}"></span><span>${s.text}</span></div>`
     ).join('')||'<div class="signal-item"><span>—</span></div>';
+
+  // Зөвлөмж блок
+  const recBlock = document.getElementById('recommendation-block');
+  const recList  = document.getElementById('recommendation-list');
+  if(r.verdict==='LIKELY_SCAM' || r.verdict==='SUSPICIOUS'){
+    const recs = [];
+    const msgLower = msg.toLowerCase();
+    const signals  = (r.signals||[]).map(s=>s.text||'').join(' ').toLowerCase();
+    const combined = msgLower + ' ' + signals;
+
+    recs.push('Та банкны болон хувийн нэвтрэх нэр, нууц үгээ битгий оруулаарай.');
+
+    if(/otp|нэг удаагийн|баталгаажуулах код|code/i.test(combined))
+      recs.push('OTP код шаардаж байвал битгий дамжуулаарай.');
+
+    if(/нууц үг|password|login|нэвтрэх/i.test(combined))
+      recs.push('Хэрвээ мэдээллээ алдсан бол нэвтрэх нэр, нууц үгээ яаралтай солиорой.');
+
+    if(/яаралтай|шуурхай|хугацаа|дуусна|хаагдана|шууд/i.test(combined))
+      recs.push('Яаруулах мессежид болгоомжтой хандаж, шийдвэр гаргахаасаа өмнө баталгаажуулна уу.');
+
+    if(/линк|холбоос|дар|click|http/i.test(combined))
+      recs.push('Мессеж дэх холбоос дарахаас өмнө домэйн хаягийг нягтлаарай.');
+
+    recs.push('Кибер гэмт хэрэгтэй тэмцэх төв 102 дугаарт холбогдоорой.');
+
+    recList.innerHTML = recs.map(rc=>`<li style="display:flex;gap:7px;align-items:flex-start"><span style="color:var(--warning);flex-shrink:0">›</span><span>${rc}</span></li>`).join('');
+    recBlock.style.display='block';
+  } else {
+    recBlock.style.display='none';
+  }
 
   document.getElementById('result-card').style.display='block';
   document.getElementById('result-card').scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -978,7 +1094,7 @@ function clearHistory(){ SESSION_HISTORY=[]; renderHistory(); }
 //  LOCAL DB
 // ══════════════════════════════════════════════
 function saveToLocalDB(entry){ DB.unshift(entry); saveDB(); }
-function saveDB(){ localStorage.setItem('smishguard_db', JSON.stringify(DB)); }
+function saveDB(){ safeStorage.setItem('smishguard_db', JSON.stringify(DB)); }
 function clearDB(){ if(confirm('Мэдээллийн санг бүрмөсөн цэвэрлэх үү?')){ DB=[]; saveDB(); renderDB(); renderDashboard(); } }
 
 function renderDB(){
@@ -1254,7 +1370,7 @@ async function runBatch(){
             model:'claude-haiku-4-5-20251001',
             max_tokens:500,
             system: sysPrompt,
-            messages:[{role:'user',content:`Classify this message:\n\n"${row.msg}"`}]
+            messages:[{role:'user',content:`Classify this message:\n\n"${row.msg}"${buildPreContext(row.msg)}`}]
           })
         });
         const data = await resp.json();
