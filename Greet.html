@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Смишинг илрүүлэгч v2</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<style>
+/* ── DARK theme (default) ── */
+:root {
+  --bg:       #0b0f18;
+  --bg2:      #131826;
+  --bg3:      #1a2035;
+  --bg4:      #212840;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #dde2f0;
+  --text2:    #7e87a0;
+  --text3:    #44495a;
+  --accent:   #4f8ef7;
+  --danger:   #f04f4f;
+  --warning:  #f5a623;
+  --success:  #3ecf8e;
+  --danger-bg:  rgba(240,79,79,0.1);
+  --warning-bg: rgba(245,166,35,0.1);
+  --success-bg: rgba(62,207,142,0.1);
+  --r:  10px;
+  --rl: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ── LIGHT theme ── */
+:root.light {
+  --bg:       #f0f4fa;
+  --bg2:      #ffffff;
+  --bg3:      #e8edf7;
+  --bg4:      #dde4f0;
+  --border:   rgba(0,0,0,0.08);
+  --border2:  rgba(0,0,0,0.14);
+  --text:     #1a2035;
+  --text2:    #5a6480;
+  --text3:    #9aa0b4;
+  --accent:   #3070e8;
+  --danger:   #d93535;
+  --warning:  #d47a0a;
+  --success:  #1fa870;
+  --danger-bg:  rgba(217,53,53,0.08);
+  --warning-bg: rgba(212,122,10,0.08);
+  --success-bg: rgba(31,168,112,0.08);
+  --shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Theme transition ── */
+*, *::before, *::after {
+  transition: background-color .3s ease, border-color .3s ease, color .2s ease, box-shadow .3s ease;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── Theme toggle button ── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  font-family: 'IBM Plex Sans', sans-serif;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.theme-toggle:hover { background: var(--bg4); color: var(--text); }
+.toggle-track {
+  width: 36px; height: 20px;
+  background: var(--bg4);
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  position: relative;
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.toggle-thumb {
+  width: 14px; height: 14px;
+  background: var(--text3);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: transform .3s, background .3s;
+}
+:root.light .toggle-track { background: var(--accent); border-color: var(--accent); }
+:root.light .toggle-thumb { background: #fff; transform: translateX(16px); }
+.toggle-icon { font-size: 15px; }
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:1.5rem 1rem;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;}
+.main{padding:2rem 2.5rem;overflow-y:auto;}
+
+/* ── Sidebar ── */
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;margin-bottom:1.5rem;}
+.brand-icon{width:34px;height:34px;border-radius:8px;background:var(--danger-bg);border:1px solid rgba(240,79,79,0.2);display:flex;align-items:center;justify-content:center;}
+.brand-icon i{font-size:18px;color:var(--danger);}
+.brand-name{font-size:14px;font-weight:600;letter-spacing:-0.02em;}
+.brand-ver{font-size:11px;color:var(--text3);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:'IBM Plex Sans',sans-serif;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--bg3);color:var(--text);font-weight:500;}
+.nav-item i{font-size:16px;flex-shrink:0;}
+.nav-sep{height:1px;background:var(--border);margin:8px 0;}
+.lang-select{margin-top:auto;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.lang-opts{display:flex;gap:4px;margin-top:6px;}
+.lang-btn{flex:1;padding:5px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;}
+.lang-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── Page titles ── */
+.page{display:none;animation:fadeUp .25s ease;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-0.02em;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:1.75rem;}
+
+/* ── API Card ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1.25rem;}
+.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px;}
+.api-row{display:flex;gap:8px;}
+.api-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--text);outline:none;transition:border .2s;}
+.api-input:focus{border-color:var(--accent);}
+.api-input::placeholder{color:var(--text3);}
+.btn{padding:9px 16px;font-size:13px;font-weight:500;border-radius:var(--r);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;border:1px solid var(--border2);background:var(--bg3);color:var(--text);}
+.btn:hover{background:var(--bg4);}
+.btn-primary{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.35);color:#7ab3fa;}
+.btn-primary:hover{background:rgba(79,142,247,0.25);}
+.btn-danger{background:rgba(240,79,79,0.12);border-color:rgba(240,79,79,0.3);color:#f47a7a;}
+.status-ok{font-size:12px;color:var(--success);margin-top:6px;}
+.status-err{font-size:12px;color:var(--danger);margin-top:6px;}
+
+/* ── Detect page ── */
+.ex-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.ex-btn{font-size:12px;padding:5px 11px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;white-space:nowrap;}
+.ex-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg2);}
+textarea{width:100%;min-height:110px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;color:var(--text);outline:none;resize:vertical;line-height:1.65;transition:border .2s;}
+textarea:focus{border-color:var(--accent);}
+textarea::placeholder{color:var(--text3);}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn-analyze{flex:1;padding:11px;font-size:14px;font-weight:600;border-radius:var(--r);border:1px solid rgba(79,142,247,0.35);background:rgba(79,142,247,0.12);color:#7ab3fa;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-analyze:hover{background:rgba(79,142,247,0.22);}
+.btn-analyze:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── Loading ── */
+.loading{display:none;text-align:center;padding:2rem;}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Result ── */
+.result-card{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1.25rem;animation:fadeUp .3s ease;}
+.verdict-row{display:flex;align-items:center;gap:14px;margin-bottom:1.25rem;}
+.v-icon{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.v-title{font-size:19px;font-weight:600;letter-spacing:-.01em;}
+.v-sub{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.5;}
+.summary-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:var(--r);padding:10px 14px;font-size:13px;line-height:1.6;margin-bottom:1.25rem;}
+.risk-bar-wrap{margin-bottom:1.25rem;}
+.risk-hdr{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:7px;}
+.risk-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.risk-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.divider{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+.signals-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;}
+.signal-item{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.55;color:var(--text2);}
+.signal-item:last-child{border-bottom:none;padding-bottom:0;}
+.s-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+
+/* ── Feedback ── */
+.feedback-row{display:flex;align-items:center;gap:10px;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);}
+.fb-label{font-size:12px;color:var(--text2);}
+.fb-btn{padding:5px 12px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.fb-btn:hover{background:var(--bg3);color:var(--text);}
+.fb-btn.selected{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.fb-sent{font-size:12px;color:var(--success);display:none;}
+
+/* ── History ── */
+.h-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer;transition:border .15s;}
+.h-item:hover{border-color:var(--border2);}
+.h-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;}
+.h-text{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.h-score{font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.h-fb{font-size:11px;margin-left:4px;}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px;}
+.empty i{font-size:30px;display:block;margin-bottom:8px;opacity:.4;}
+
+/* ── Dashboard ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;}
+.stat-val{font-size:28px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:-.02em;}
+.stat-lbl{font-size:12px;color:var(--text2);margin-top:4px;}
+.stat-icon{font-size:20px;margin-bottom:8px;}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:1rem;}
+.bar-chart{display:flex;flex-direction:column;gap:8px;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+.bar-lbl{width:90px;color:var(--text2);text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.bar-val{width:40px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-align:right;flex-shrink:0;}
+.donut-wrap{display:flex;align-items:center;gap:1.5rem;}
+.donut-legend{display:flex;flex-direction:column;gap:8px;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.feedback-table{width:100%;border-collapse:collapse;font-size:13px;}
+.feedback-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);border-bottom:1px solid var(--border);}
+.feedback-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+.feedback-table tr:last-child td{border-bottom:none;}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;font-weight:500;}
+
+/* ── DB export ── */
+.db-actions{display:flex;gap:8px;margin-bottom:1rem;}
+.db-count{font-size:13px;color:var(--text2);margin-bottom:1rem;}
+/* ── Confusion Matrix ── */
+.cm-table{border-collapse:collapse;font-size:12px;width:100%;}
+.cm-table th,.cm-table td{padding:8px 12px;text-align:center;border:1px solid var(--border);}
+.cm-table th{background:var(--bg3);color:var(--text2);font-weight:500;}
+.cm-cell-match{background:rgba(62,207,142,0.15);color:var(--success);font-weight:600;}
+.cm-cell-miss{background:rgba(240,79,79,0.1);color:var(--danger);}
+.metric-chip{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+.correct-chip{background:rgba(62,207,142,0.15);color:var(--success);}
+.wrong-chip{background:rgba(240,79,79,0.12);color:var(--danger);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brand-icon"><i class="ti ti-shield-exclamation"></i></div>
+    <div>
+      <div class="brand-name">SmishGuard</div>
+      <div class="brand-ver">v2.0 · Дипломын судалгаа</div>
+    </div>
+  </div>
+
+  <button class="nav-item active" onclick="showPage('detect',this)">
+    <i class="ti ti-search"></i> Илрүүлэлт
+  </button>
+  <button class="nav-item" onclick="showPage('history',this)">
+    <i class="ti ti-history"></i> Түүх
+  </button>
+  <button class="nav-item" onclick="showPage('dashboard',this)">
+    <i class="ti ti-chart-bar"></i> Дашбоард
+  </button>
+  <button class="nav-item" onclick="showPage('database',this)">
+    <i class="ti ti-database"></i> Мэдээллийн сан
+  </button>
+  <button class="nav-item" onclick="showPage('batch',this)">
+    <i class="ti ti-test-pipe"></i> Туршилт
+  </button>
+  <div class="nav-sep"></div>
+  <button class="nav-item" onclick="showPage('settings',this)">
+    <i class="ti ti-settings"></i> Тохиргоо
+  </button>
+
+  <div style="margin-top:auto">
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">
+      <span id="theme-label"><i class="ti ti-moon" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>Night mode</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    </button>
+    <div class="card-label" style="padding:0 8px;margin-bottom:6px;margin-top:8px">Хэл / Language</div>
+    <div class="lang-opts">
+      <button class="lang-btn active" onclick="setLang('mn',this)">🇲🇳 МН</button>
+      <button class="lang-btn" onclick="setLang('en',this)">🇬🇧 EN</button>
+      <button class="lang-btn" onclick="setLang('zh',this)">🇨🇳 中文</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- DETECT PAGE -->
+  <div class="page active" id="page-detect">
+    <div class="page-title">Смишинг шинжилгээ</div>
+    <div class="page-sub" id="detect-sub">SMS мессежийг оруулж, AI-аар шинжлүүлнэ үү</div>
+
+    <div class="card">
+      <div class="card-label">Жишээ мессежүүд</div>
+      <div class="ex-row" id="ex-row"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" id="input-label">Мессеж оруулах</div>
+      <textarea id="msgInput" placeholder="Энд мессежийг буулгана уу..."></textarea>
+      <div class="btn-row">
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+          <i class="ti ti-robot" style="font-size:16px"></i>
+          <span id="analyze-btn-text">AI шинжилгээ хийх</span>
+        </button>
+        <button class="btn" onclick="document.getElementById('msgInput').value='';document.getElementById('result-card').style.display='none'">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div style="font-size:13px;color:var(--text2)" id="loading-text">Мессежийг шинжилж байна...</div>
+    </div>
+
+    <div class="result-card" id="result-card">
+      <div class="verdict-row">
+        <div class="v-icon" id="v-icon"></div>
+        <div>
+          <div class="v-title" id="v-title"></div>
+          <div class="v-sub" id="v-sub"></div>
+        </div>
+      </div>
+      <div class="summary-box" id="v-summary"></div>
+      <div class="risk-bar-wrap">
+        <div class="risk-hdr">
+          <span id="risk-label">Эрсдэлийн индекс</span>
+          <span id="risk-num" style="font-weight:500;font-family:'IBM Plex Mono',monospace"></span>
+        </div>
+        <div class="risk-track"><div class="risk-fill" id="risk-fill"></div></div>
+      </div>
+      <hr class="divider"/>
+      <div class="signals-lbl" id="signals-lbl">Илэрсэн шинж тэмдгүүд</div>
+      <div id="signals-list"></div>
+      <!-- Feedback -->
+      <div class="feedback-row">
+        <span class="fb-label" id="fb-label">Дүгнэлт зөв үү?</span>
+        <button class="fb-btn" id="fb-yes" onclick="sendFeedback('correct')">
+          <i class="ti ti-thumb-up"></i> <span id="fb-yes-text">Зөв</span>
+        </button>
+        <button class="fb-btn" id="fb-no" onclick="sendFeedback('incorrect')">
+          <i class="ti ti-thumb-down"></i> <span id="fb-no-text">Буруу</span>
+        </button>
+        <span class="fb-sent" id="fb-sent"><i class="ti ti-check"></i> <span id="fb-sent-text">Баярлалаа!</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div class="page" id="page-history">
+    <div class="page-title" id="hist-title">Шинжилгээний түүх</div>
+    <div class="page-sub" id="hist-sub">Энэ ажлын хуралдааны бүх шинжилгээний үр дүн</div>
+    <div style="display:flex;gap:8px;margin-bottom:1rem">
+      <button class="btn btn-danger" onclick="clearHistory()" style="font-size:12px;padding:7px 12px">
+        <i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+        <span id="clear-hist-text">Цэвэрлэх</span>
+      </button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page" id="page-dashboard">
+    <div class="page-title" id="dash-title">Статистик дашбоард</div>
+    <div class="page-sub" id="dash-sub">Нийт шинжилгээний нэгтгэл</div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title" id="chart-dist-title">Ангиллын харьцаа</div>
+        <div class="donut-wrap">
+          <canvas id="donutChart" width="120" height="120"></canvas>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" id="chart-lang-title">Хэлний харьцаа</div>
+        <div class="bar-chart" id="lang-chart"></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:1rem">
+      <div class="chart-title" id="chart-feed-title">Хэрэглэгчийн үнэлгээний дүн</div>
+      <div class="bar-chart" id="feedback-chart"></div>
+    </div>
+  </div>
+
+  <!-- DATABASE PAGE -->
+  <div class="page" id="page-database">
+    <div class="page-title" id="db-title">Мэдээллийн сан</div>
+    <div class="page-sub" id="db-sub">Бүх шинжилгээний бүртгэл — дипломын судалгааны өгөгдлийн сан</div>
+    <div class="db-actions">
+      <button class="btn btn-primary" onclick="exportCSV()">
+        <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+        <span id="export-csv-text">CSV татах</span>
+      </button>
+      <button class="btn" onclick="exportJSON()">
+        <i class="ti ti-braces" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+        JSON татах
+      </button>
+      <button class="btn btn-danger" onclick="clearDB()">
+        <i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+        <span id="clear-db-text">Цэвэрлэх</span>
+      </button>
+    </div>
+    <div class="db-count" id="db-count"></div>
+    <div class="card" style="overflow-x:auto">
+      <table class="feedback-table" id="db-table">
+        <thead><tr>
+          <th>#</th><th id="db-th-time">Цаг</th><th id="db-th-lang">Хэл</th>
+          <th id="db-th-verdict">Дүгнэлт</th><th id="db-th-score">Индекс</th>
+          <th id="db-th-msg">Мессеж</th><th id="db-th-fb">Санал</th>
+        </tr></thead>
+        <tbody id="db-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-title" id="settings-title">Тохиргоо</div>
+    <div class="page-sub" id="settings-sub">API болон системийн тохиргоонууд</div>
+    <div class="card">
+      <div class="card-label">Anthropic API түлхүүр</div>
+      <div class="api-row">
+        <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-api03-..."/>
+        <button class="btn btn-primary" onclick="saveKey()">
+          <i class="ti ti-check" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+          <span id="save-key-text">Хадгалах</span>
+        </button>
+      </div>
+      <div id="api-status"></div>
+    </div>
+    <div class="card">
+      <div class="card-label" id="mode-label">Илрүүлэлтийн горим</div>
+      <div class="lang-opts" style="max-width:280px">
+        <button class="lang-btn active" id="mode-zero" onclick="setMode('zero',this)">Zero-shot</button>
+        <button class="lang-btn" id="mode-few" onclick="setMode('few',this)">Few-shot</button>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:8px" id="mode-desc">Zero-shot: урьдчилсан жишээгүйгээр шинжилнэ</div>
+    </div>
+  <!-- BATCH EXPERIMENT PAGE -->
+  <div class="page" id="page-batch">
+    <div class="page-title">Batch туршилт</div>
+    <div class="page-sub">Zero-shot болон Few-shot аргын үр дүнг хэмжиж харьцуулна</div>
+
+    <!-- Dataset оруулах -->
+    <div class="card">
+      <div class="card-label">1. Туршилтын өгөгдөл оруулах (CSV)</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.7">
+        CSV форматаар оруулна уу: <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:'IBM Plex Mono',monospace">мессеж,жинхэнэ_шошго</code><br>
+        Жинхэнэ шошго: <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:'IBM Plex Mono',monospace">LIKELY_SCAM</code> | <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:'IBM Plex Mono',monospace">SUSPICIOUS</code> | <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:'IBM Plex Mono',monospace">SAFE</code>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="loadSampleDataset()" style="font-size:12px">
+          <i class="ti ti-download" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Жишээ датасет ачаалах
+        </button>
+        <button class="btn" onclick="document.getElementById('csvFile').click()" style="font-size:12px">
+          <i class="ti ti-upload" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>CSV файл оруулах
+        </button>
+        <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="loadCSV(this)">
+      </div>
+      <textarea id="batchInput" style="min-height:130px;font-family:'IBM Plex Mono',monospace;font-size:12px" placeholder="мессеж,жинхэнэ_шошго&#10;Таны данс түдгэлзүүлэгдлээ. http://fake-bank.tk,LIKELY_SCAM&#10;Сайн байна уу? Маргааш уулзах боломжтой юу?,SAFE"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <span id="dataset-count" style="font-size:12px;color:var(--text2)">Мессеж: 0</span>
+        <div style="display:flex;gap:6px">
+          <select id="batch-mode-sel" class="api-input" style="max-width:160px;padding:6px 10px;font-size:12px;font-family:'IBM Plex Sans',sans-serif">
+            <option value="zero">Zero-shot</option>
+            <option value="few">Few-shot</option>
+            <option value="both">Хоёуланг нь (харьцуулалт)</option>
+          </select>
+          <button class="btn-analyze" id="batchRunBtn" onclick="runBatch()" style="flex:none;padding:8px 18px;font-size:13px">
+            <i class="ti ti-player-play" style="font-size:14px"></i>
+            <span>Туршилт эхлүүлэх</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Явц -->
+    <div id="batch-progress-wrap" style="display:none" class="card">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+        <span id="batch-progress-text" style="color:var(--text2)">Бэлтгэж байна...</span>
+        <span id="batch-progress-pct" style="font-family:'IBM Plex Mono',monospace;color:var(--accent)">0%</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+        <div id="batch-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width .3s"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px" id="batch-eta"></div>
+    </div>
+
+    <!-- Үр дүн -->
+    <div id="batch-results-wrap" style="display:none">
+
+      <!-- Метрик картууд -->
+      <div id="batch-metrics-zero" style="display:none">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Zero-shot үр дүн</div>
+        <div class="stats-grid" id="metrics-zero-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem"></div>
+      </div>
+      <div id="batch-metrics-few" style="display:none">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Few-shot үр дүн</div>
+        <div class="stats-grid" id="metrics-few-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem"></div>
+      </div>
+
+      <!-- Харьцуулалтын хүснэгт (хоёуланг сонгосон үед) -->
+      <div id="compare-table-wrap" style="display:none" class="card" style="margin-bottom:1.25rem">
+        <div class="card-label" style="margin-bottom:12px">Zero-shot vs Few-shot харьцуулалт</div>
+        <table class="feedback-table" id="compare-table">
+          <thead><tr>
+            <th>Хэмжүүр</th><th>Zero-shot</th><th>Few-shot</th><th>Ялгаа</th>
+          </tr></thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Confusion matrix -->
+      <div class="chart-row" style="margin-bottom:1.25rem">
+        <div class="chart-card" id="cm-zero-wrap" style="display:none">
+          <div class="chart-title">Confusion Matrix — Zero-shot</div>
+          <div id="cm-zero"></div>
+        </div>
+        <div class="chart-card" id="cm-few-wrap" style="display:none">
+          <div class="chart-title">Confusion Matrix — Few-shot</div>
+          <div id="cm-few"></div>
+        </div>
+      </div>
+
+      <!-- Дэлгэрэнгүй хүснэгт -->
+      <div class="card" style="overflow-x:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-label" style="margin:0">Дэлгэрэнгүй үр дүн</div>
+          <button class="btn" onclick="exportBatchCSV()" style="font-size:12px;padding:5px 12px">
+            <i class="ti ti-download" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>CSV татах
+          </button>
+        </div>
+        <table class="feedback-table" id="batch-detail-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Мессеж</th>
+            <th>Жинхэнэ</th>
+            <th id="bdt-zero-head" style="display:none">Zero-shot</th>
+            <th id="bdt-few-head" style="display:none">Few-shot</th>
+          </tr></thead>
+          <tbody id="batch-detail-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currentLang  = 'mn';
+let currentMode  = 'zero';
+let currentResult = null;
+let DB = JSON.parse(localStorage.getItem('smishguard_db') || '[]');
+let SESSION_HISTORY = [];
+
+// ══════════════════════════════════════════════
+//  I18N
+// ══════════════════════════════════════════════
+const T = {
+  mn:{
+    detectSub:'SMS мессежийг оруулж, AI-аар шинжлүүлнэ үү',
+    inputLabel:'Мессеж оруулах',
+    analyzeBtnText:'AI-аар шинжлэх',
+    loadingText:'Мессежийг шинжилж байна...',
+    riskLabel:'Эрсдэлийн оноо',
+    signalsLbl:'Илэрсэн сэрэмжлүүлэгч шинжүүд',
+    fbLabel:'Дүгнэлт зөв байсан уу?',
+    fbYes:'Зөв', fbNo:'Буруу', fbSent:'Санал бүртгэгдлээ!',
+    histTitle:'Шинжилгээний түүх',
+    histSub:'Энэ ажлын хуралдааны бүх шинжилгээний үр дүн',
+    clearHist:'Түүх цэвэрлэх',
+    dashTitle:'Статистикийн самбар',
+    dashSub:'Нийт шинжилгээний нэгтгэл',
+    chartDist:'Ангиллын харьцаа',
+    chartLang:'Хэлний харьцаа',
+    chartFeed:'Хэрэглэгчийн үнэлгээний дүн',
+    dbTitle:'Мэдээллийн сан',
+    dbSub:'Бүх шинжилгээний бүртгэл — дипломын судалгааны өгөгдлийн сан',
+    exportCSV:'CSV татаж авах',
+    clearDB:'Өгөгдөл цэвэрлэх',
+    dbThTime:'Огноо/цаг',dbThLang:'Хэл',dbThVerdict:'Дүгнэлт',
+    dbThScore:'Оноо',dbThMsg:'Мессеж',dbThFb:'Үнэлгээ',
+    dbCount:(n)=>`Нийт ${n} бүртгэл байна`,
+    settingsTitle:'Тохиргоо',
+    settingsSub:'API болон системийн тохиргоонууд',
+    saveKeyText:'Хадгалах',
+    modeLabel:'Шинжилгээний горим',
+    modeZeroDesc:'Zero-shot: урьдчилсан жишээгүйгээр шинжилнэ',
+    modeFewDesc:'Few-shot: жишээн дээр тулгуурлан илүү нарийн шинжилнэ',
+    statTotal:'Нийт шинжилгээ',
+    statScam:'Луйвар илэрсэн',
+    statSafe:'Аюулгүй',
+    statAccuracy:'Үнэлгээний нарийвчлал',
+    verdicts:{LIKELY_SCAM:{label:'Луйврын мессеж',sub:'Энэ мессеж луйврын шинж тэмдэгтэй байна. Хариулахгүй байхыг зөвлөж байна.'},SUSPICIOUS:{label:'Сэжигтэй мессеж',sub:'Энэ мессеж сэжигтэй байна. Үйлдэл хийхийн өмнө нэмэлтээр баталгаажуулна уу.'},SAFE:{label:'Аюулгүй мессеж',sub:'Энэ мессеж аюулгүй байх магадлалтай байна.'}},
+    examples:[
+      {label:'Банкны луйвар',text:'Таны дансанд сэжигтэй гүйлгээ хийгдсэн байна. Шууд баталгаажуулна уу: http://xn--golomt-bank.com/verify'},
+      {label:'Хожлын мэдэгдэл',text:'БАЯР ХҮРГЭЕ! Та 5,000,000₮ хожлоо! Хожлоо авахын тулд доорх линкэнд дарж мэдээллээ бүртгүүлнэ үү: bit.ly/mn-winner'},
+      {label:'Нэвтрэх OTP',text:'Таны Google бүртгэлд шинэ нэвтрэлт Будапештаас илэрлээ. Та биш бол 228886257 дугаарт холбоо барина уу.'},
+      {label:'Аюулгүй мессеж',text:'Сайн байна уу? Маргааш уулзах боломжтой юу? Цайны газар очицгооё.'}
+    ],
+    systemPrompt:(mode)=> mode==='few'
+      ? `Та SMS луйвар илрүүлэх мэргэшсэн AI систем юм. Монгол хэлний дүгнэлт болон тайлбарыг зөв найруулга, байгалийн монгол хэлээр бичнэ үү. Техникийн нэр томьёог монголчилно уу. "Мессеж нь...", "Энэ мессеж..." гэх мэт байгалийн өгүүлбэрийн бүтцийг ашиглана уу.
+
+Жишээнүүд:
+[SPAM] "Таны данс түдгэлзүүлэгдлээ. http://fake-bank.tk"
+[HAM]  "Маргааш уулзах боломжтой юу?"
+[SPAM] "Та 1,000,000₮ хожлоо! bit.ly/win"
+[HAM]  "Хичээл 10 цагт эхэлнэ."
+
+Зөвхөн JSON форматаар хариул (тайлбар бүрийг бүтэн монгол өгүүлбэрээр бич):
+{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"Нэг бүтэн монгол өгүүлбэрт ерөнхий дүгнэлт","signals":[{"type":"danger"|"warning"|"safe","text":"Бүтэн монгол өгүүлбэрт тайлбар"}]}`
+      : `Та SMS луйвар илрүүлэх мэргэшсэн AI систем юм. Монгол болон Англи хэлний мессежийг шинжилнэ. Монгол хэлний дүгнэлт болон тайлбарыг зөв найруулга, байгалийн монгол хэлээр бичнэ үү. Техникийн нэр томьёог монголчилно уу. "Мессеж нь...", "Энэ мессеж..." гэх мэт байгалийн өгүүлбэрийн бүтцийг ашиглана уу.
+
+Зөвхөн JSON форматаар хариул (тайлбар бүрийг бүтэн монгол өгүүлбэрээр бич):
+{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"Нэг бүтэн монгол өгүүлбэрт ерөнхий дүгнэлт","signals":[{"type":"danger"|"warning"|"safe","text":"Бүтэн монгол өгүүлбэрт тайлбар"}]}`
+  },
+  en:{
+    detectSub:'Enter an SMS message to analyze for smishing',
+    inputLabel:'Enter message',
+    analyzeBtnText:'Analyze with AI',
+    loadingText:'Analyzing message...',
+    riskLabel:'Risk Index',
+    signalsLbl:'Detected Signals',
+    fbLabel:'Was this correct?',
+    fbYes:'Correct', fbNo:'Wrong', fbSent:'Thanks!',
+    histTitle:'Analysis History',
+    histSub:'All analyses from this session',
+    clearHist:'Clear',
+    dashTitle:'Statistics Dashboard',
+    dashSub:'Aggregated analysis statistics',
+    chartDist:'Verdict Distribution',
+    chartLang:'Language Distribution',
+    chartFeed:'User Feedback Summary',
+    dbTitle:'Database',
+    dbSub:'All analysis records — research dataset',
+    exportCSV:'Export CSV',
+    clearDB:'Clear',
+    dbThTime:'Time',dbThLang:'Lang',dbThVerdict:'Verdict',
+    dbThScore:'Score',dbThMsg:'Message',dbThFb:'Feedback',
+    dbCount:(n)=>`${n} total records`,
+    settingsTitle:'Settings',
+    settingsSub:'API and system configuration',
+    saveKeyText:'Save',
+    modeLabel:'Detection Mode',
+    modeZeroDesc:'Zero-shot: analyze without examples',
+    modeFewDesc:'Few-shot: analyze with examples for higher accuracy',
+    statTotal:'Total Analyzed',statScam:'Scams Detected',statSafe:'Safe',statAccuracy:'Feedback Accuracy',
+    verdicts:{LIKELY_SCAM:{label:'Scam Message',sub:'This message shows signs of smishing. Do not respond.'},SUSPICIOUS:{label:'Suspicious Message',sub:'This message is suspicious. Verify before taking action.'},SAFE:{label:'Safe Message',sub:'This message appears to be safe.'}},
+    examples:[
+      {label:'Bank scam',text:'Your account has been suspended. Verify immediately: http://secure-bank-alert.tk/verify'},
+      {label:'Prize claim',text:'CONGRATULATIONS! You\'ve won $5,000! Click to claim: bit.ly/winner2024'},
+      {label:'OTP scam',text:'New sign-in from Budapest. If not you, contact us on 228886257.'},
+      {label:'Safe message',text:'Hey, are you free tomorrow afternoon? Let\'s grab coffee.'}
+    ],
+    systemPrompt:(mode)=> mode==='few'
+      ? `You are a professional smishing detection AI system.\n\nExamples:\n[SPAM] "Your account suspended. http://fake-bank.tk"\n[HAM]  "Are you free tomorrow?"\n[SPAM] "You won $1000! bit.ly/claim"\n[HAM]  "Class starts at 10am."\n\nReply ONLY with JSON:\n{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"One sentence in English","signals":[{"type":"danger"|"warning"|"safe","text":"explanation"}]}`
+      : `You are a professional smishing detection AI system. Analyze SMS messages.\nReply ONLY with JSON:\n{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"One sentence","signals":[{"type":"danger"|"warning"|"safe","text":"explanation"}]}`
+  },
+  zh:{
+    detectSub:'输入短信进行诈骗分析',
+    inputLabel:'输入消息',
+    analyzeBtnText:'AI 分析',
+    loadingText:'正在分析消息...',
+    riskLabel:'风险指数',
+    signalsLbl:'检测到的信号',
+    fbLabel:'结果正确吗？',
+    fbYes:'正确', fbNo:'错误', fbSent:'谢谢！',
+    histTitle:'分析历史',
+    histSub:'本次会话的所有分析结果',
+    clearHist:'清除',
+    dashTitle:'统计仪表板',
+    dashSub:'汇总分析统计数据',
+    chartDist:'判决分布',
+    chartLang:'语言分布',
+    chartFeed:'用户反馈摘要',
+    dbTitle:'数据库',
+    dbSub:'所有分析记录 — 研究数据集',
+    exportCSV:'导出 CSV',
+    clearDB:'清除',
+    dbThTime:'时间',dbThLang:'语言',dbThVerdict:'判决',
+    dbThScore:'分数',dbThMsg:'消息',dbThFb:'反馈',
+    dbCount:(n)=>`共 ${n} 条记录`,
+    settingsTitle:'设置',
+    settingsSub:'API 和系统配置',
+    saveKeyText:'保存',
+    modeLabel:'检测模式',
+    modeZeroDesc:'零样本：无示例分析',
+    modeFewDesc:'少样本：使用示例进行更精确的分析',
+    statTotal:'总分析数',statScam:'检测到诈骗',statSafe:'安全',statAccuracy:'反馈准确率',
+    verdicts:{LIKELY_SCAM:{label:'诈骗短信',sub:'此消息显示出诈骗迹象，请勿回复。'},SUSPICIOUS:{label:'可疑短信',sub:'此消息可疑，请采取行动前验证。'},SAFE:{label:'安全短信',sub:'此消息看起来是安全的。'}},
+    examples:[
+      {label:'银行诈骗',text:'您的账户已被暂停。请立即验证：http://fake-bank.tk/verify'},
+      {label:'中奖诈骗',text:'恭喜您中奖了50000元！点击领取：bit.ly/prize2024'},
+      {label:'验证码诈骗',text:'您的账户在布达佩斯有新登录。如不是您，请联系228886257。'},
+      {label:'安全短信',text:'你好，明天下午有空吗？一起喝咖啡吧。'}
+    ],
+    systemPrompt:(mode)=> `你是专业的短信诈骗检测AI系统。仅以JSON格式回复：\n{"verdict":"LIKELY_SCAM"|"SUSPICIOUS"|"SAFE","riskScore":0-100,"summary":"一句话中文摘要","signals":[{"type":"danger"|"warning"|"safe","text":"说明"}]}`
+  }
+};
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.onload = ()=>{
+  const saved = localStorage.getItem('smishguard_key');
+  if(saved) document.getElementById('apiKey').value = saved;
+  applyTheme();
+  renderExamples();
+  renderHistory();
+  renderDashboard();
+  renderDB();
+  applyLang();
+};
+
+function t(){ return T[currentLang]; }
+
+function applyLang(){
+  const l = t();
+  document.getElementById('detect-sub').textContent    = l.detectSub;
+  document.getElementById('input-label').textContent   = l.inputLabel;
+  document.getElementById('analyze-btn-text').textContent = l.analyzeBtnText;
+  document.getElementById('loading-text').textContent  = l.loadingText;
+  document.getElementById('risk-label').textContent    = l.riskLabel;
+  document.getElementById('signals-lbl').textContent   = l.signalsLbl;
+  document.getElementById('fb-label').textContent      = l.fbLabel;
+  document.getElementById('fb-yes-text').textContent   = l.fbYes;
+  document.getElementById('fb-no-text').textContent    = l.fbNo;
+  document.getElementById('fb-sent-text').textContent  = l.fbSent;
+  document.getElementById('hist-title').textContent    = l.histTitle;
+  document.getElementById('hist-sub').textContent      = l.histSub;
+  document.getElementById('clear-hist-text').textContent = l.clearHist;
+  document.getElementById('dash-title').textContent    = l.dashTitle;
+  document.getElementById('dash-sub').textContent      = l.dashSub;
+  document.getElementById('chart-dist-title').textContent = l.chartDist;
+  document.getElementById('chart-lang-title').textContent = l.chartLang;
+  document.getElementById('chart-feed-title').textContent = l.chartFeed;
+  document.getElementById('db-title').textContent      = l.dbTitle;
+  document.getElementById('db-sub').textContent        = l.dbSub;
+  document.getElementById('export-csv-text').textContent = l.exportCSV;
+  document.getElementById('clear-db-text').textContent = l.clearDB;
+  document.getElementById('db-th-time').textContent    = l.dbThTime;
+  document.getElementById('db-th-lang').textContent    = l.dbThLang;
+  document.getElementById('db-th-verdict').textContent = l.dbThVerdict;
+  document.getElementById('db-th-score').textContent   = l.dbThScore;
+  document.getElementById('db-th-msg').textContent     = l.dbThMsg;
+  document.getElementById('db-th-fb').textContent      = l.dbThFb;
+  document.getElementById('settings-title').textContent = l.settingsTitle;
+  document.getElementById('settings-sub').textContent  = l.settingsSub;
+  document.getElementById('save-key-text').textContent = l.saveKeyText;
+  document.getElementById('mode-label').textContent    = l.modeLabel;
+  renderExamples();
+  renderDashboard();
+  renderDB();
+}
+
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='database')  renderDB();
+  if(id==='history')   renderHistory();
+}
+
+// ══════════════════════════════════════════════
+//  LANG & MODE
+// ══════════════════════════════════════════════
+function setLang(lang, btn){
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyLang();
+}
+function setMode(mode, btn){
+  currentMode = mode;
+  document.querySelectorAll('#mode-zero,#mode-few').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const l = t();
+  document.getElementById('mode-desc').textContent =
+    mode==='zero' ? l.modeZeroDesc : l.modeFewDesc;
+}
+
+// ══════════════════════════════════════════════
+//  THEME TOGGLE
+// ══════════════════════════════════════════════
+let isDark = localStorage.getItem('smishguard_theme') !== 'light';
+
+function applyTheme(){
+  if(isDark){
+    document.documentElement.classList.remove('light');
+    document.getElementById('theme-label').innerHTML =
+      '<i class="ti ti-moon" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>Night mode';
+  } else {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-label').innerHTML =
+      '<i class="ti ti-sun" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>Day mode';
+  }
+  localStorage.setItem('smishguard_theme', isDark ? 'dark' : 'light');
+}
+
+function toggleTheme(){
+  isDark = !isDark;
+  applyTheme();
+}
+
+// ══════════════════════════════════════════════
+//  API KEY
+// ══════════════════════════════════════════════
+function saveKey(){
+  const k = document.getElementById('apiKey').value.trim();
+  if(!k.startsWith('sk-ant-')){
+    document.getElementById('api-status').innerHTML='<div class="status-err">Буруу формат. Түлхүүр sk-ant- гэж эхлэх ёстой.</div>';
+    return;
+  }
+  localStorage.setItem('smishguard_key', k);
+  document.getElementById('api-status').innerHTML='<div class="status-ok">✓ Амжилттай хадгаллаа</div>';
+}
+function getKey(){ return localStorage.getItem('smishguard_key')||document.getElementById('apiKey').value.trim(); }
+
+// ══════════════════════════════════════════════
+//  EXAMPLES
+// ══════════════════════════════════════════════
+function renderExamples(){
+  const exs = t().examples;
+  document.getElementById('ex-row').innerHTML = exs.map((e,i)=>
+    `<button class="ex-btn" onclick="loadEx(${i})">${e.label}</button>`
+  ).join('');
+}
+function loadEx(i){
+  document.getElementById('msgInput').value = t().examples[i].text;
+  document.getElementById('result-card').style.display='none';
+}
+
+// ══════════════════════════════════════════════
+//  ANALYZE
+// ══════════════════════════════════════════════
+async function analyze(){
+  const msg = document.getElementById('msgInput').value.trim();
+  if(!msg){ alert('Мессеж оруулна уу!'); return; }
+  const key = getKey();
+  if(!key||!key.startsWith('sk-ant-')){
+    showPage('settings'); alert('Эхлээд API түлхүүрээ тохиргоонд оруулна уу!'); return;
+  }
+
+  document.getElementById('result-card').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('fb-sent').style.display='none';
+  document.getElementById('fb-yes').classList.remove('selected');
+  document.getElementById('fb-no').classList.remove('selected');
+
+  const sysPrompt = t().systemPrompt(currentMode);
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:1000,
+        system: sysPrompt,
+        messages:[{role:'user',content:`Classify this message:\n\n"${msg}"`}]
+      })
+    });
+    if(!resp.ok){ const e=await resp.json(); throw new Error(e.error?.message||'API алдаа'); }
+    const data = await resp.json();
+    let raw = data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const result = JSON.parse(raw);
+    currentResult = {msg, result, lang: currentLang, mode: currentMode, time: new Date().toISOString(), feedback: null};
+    showResult(result, msg);
+    saveToSession(currentResult);
+    saveToLocalDB(currentResult);
+  } catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('analyzeBtn').disabled=false;
+    alert('Алдаа: '+e.message);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  SHOW RESULT
+// ══════════════════════════════════════════════
+const CFGS = {
+  LIKELY_SCAM:{iconClass:'ti-alert-triangle',iconColor:'#f04f4f',iconBg:'rgba(240,79,79,0.15)',barColor:'#f04f4f',badgeBg:'rgba(240,79,79,0.12)',badgeColor:'#f47a7a'},
+  SUSPICIOUS: {iconClass:'ti-alert-circle',  iconColor:'#f5a623',iconBg:'rgba(245,166,35,0.15)',barColor:'#f5a623',badgeBg:'rgba(245,166,35,0.12)',badgeColor:'#f5c060'},
+  SAFE:       {iconClass:'ti-circle-check',  iconColor:'#3ecf8e',iconBg:'rgba(62,207,142,0.15)',barColor:'#3ecf8e',badgeBg:'rgba(62,207,142,0.12)',badgeColor:'#3ecf8e'}
+};
+function showResult(r, msg){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('analyzeBtn').disabled=false;
+
+  const cfg   = CFGS[r.verdict]||CFGS.SUSPICIOUS;
+  const vtext = t().verdicts[r.verdict]||t().verdicts.SUSPICIOUS;
+  const pct   = Math.min(100,Math.max(0,r.riskScore||0));
+
+  document.getElementById('v-icon').style.background = cfg.iconBg;
+  document.getElementById('v-icon').innerHTML = `<i class="ti ${cfg.iconClass}" style="font-size:26px;color:${cfg.iconColor}"></i>`;
+  document.getElementById('v-title').textContent = vtext.label;
+  document.getElementById('v-title').style.color = cfg.iconColor;
+  document.getElementById('v-sub').textContent   = vtext.sub;
+  document.getElementById('v-summary').textContent = r.summary||'';
+  document.getElementById('risk-num').textContent = pct+' / 100';
+  document.getElementById('risk-fill').style.width = pct+'%';
+  document.getElementById('risk-fill').style.background = cfg.barColor;
+
+  const dotC = {danger:'#f04f4f',warning:'#f5a623',safe:'#3ecf8e'};
+  document.getElementById('signals-list').innerHTML =
+    (r.signals||[]).map(s=>
+      `<div class="signal-item"><span class="s-dot" style="background:${dotC[s.type]||'#888'}"></span><span>${s.text}</span></div>`
+    ).join('')||'<div class="signal-item"><span>—</span></div>';
+
+  document.getElementById('result-card').style.display='block';
+  document.getElementById('result-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ══════════════════════════════════════════════
+//  FEEDBACK / LEARNING
+// ══════════════════════════════════════════════
+function sendFeedback(type){
+  if(!currentResult) return;
+  currentResult.feedback = type;
+  // Update in DB
+  const idx = DB.findIndex(d=>d.time===currentResult.time);
+  if(idx>-1){ DB[idx].feedback=type; saveDB(); }
+  // Update session
+  const si = SESSION_HISTORY.findIndex(d=>d.time===currentResult.time);
+  if(si>-1) SESSION_HISTORY[si].feedback=type;
+
+  document.getElementById('fb-yes').classList.toggle('selected', type==='correct');
+  document.getElementById('fb-no').classList.toggle('selected',  type==='incorrect');
+  document.getElementById('fb-sent').style.display='inline-flex';
+}
+
+// ══════════════════════════════════════════════
+//  SESSION HISTORY
+// ══════════════════════════════════════════════
+function saveToSession(entry){ SESSION_HISTORY.unshift(entry); }
+
+function renderHistory(){
+  const el = document.getElementById('history-list');
+  if(!SESSION_HISTORY.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-inbox"></i>Шинжилгээний түүх хоосон байна</div>';
+    return;
+  }
+  const labels={LIKELY_SCAM:'Луйвар',SUSPICIOUS:'Сэжигтэй',SAFE:'Аюулгүй'};
+  el.innerHTML = SESSION_HISTORY.map((h,i)=>{
+    const cfg = CFGS[h.result.verdict]||CFGS.SUSPICIOUS;
+    const lbl = labels[h.result.verdict]||'?';
+    const fb  = h.feedback==='correct'?'✓':h.feedback==='incorrect'?'✗':'';
+    return `<div class="h-item" onclick="replayHistory(${i})">
+      <span class="h-badge" style="background:${cfg.badgeBg};color:${cfg.badgeColor}">${lbl}</span>
+      <span class="h-text">${h.msg.slice(0,70)}${h.msg.length>70?'...':''}</span>
+      <span class="h-score">${h.result.riskScore||0}%</span>
+      <span class="h-fb">${fb}</span>
+    </div>`;
+  }).join('');
+}
+function replayHistory(i){
+  const h = SESSION_HISTORY[i];
+  document.getElementById('msgInput').value = h.msg;
+  showResult(h.result, h.msg);
+  showPage('detect', document.querySelector('.nav-item'));
+}
+function clearHistory(){ SESSION_HISTORY=[]; renderHistory(); }
+
+// ══════════════════════════════════════════════
+//  LOCAL DB
+// ══════════════════════════════════════════════
+function saveToLocalDB(entry){ DB.unshift(entry); saveDB(); }
+function saveDB(){ localStorage.setItem('smishguard_db', JSON.stringify(DB)); }
+function clearDB(){ if(confirm('Мэдээллийн санг бүрмөсөн цэвэрлэх үү?')){ DB=[]; saveDB(); renderDB(); renderDashboard(); } }
+
+function renderDB(){
+  const l = t();
+  document.getElementById('db-count').textContent = l.dbCount(DB.length);
+  const body = document.getElementById('db-body');
+  if(!DB.length){ body.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:2rem">Мэдээлэл байхгүй</td></tr>`; return; }
+  const labels={LIKELY_SCAM:'Луйвар',SUSPICIOUS:'Сэжигтэй',SAFE:'Аюулгүй'};
+  const fbLabels={correct:'✓',incorrect:'✗',null:'—'};
+  body.innerHTML = DB.slice(0,50).map((d,i)=>{
+    const cfg = CFGS[d.result.verdict]||CFGS.SUSPICIOUS;
+    const lbl = labels[d.result.verdict]||'?';
+    const dt  = new Date(d.time).toLocaleString('mn-MN');
+    const fb  = fbLabels[d.feedback]||'—';
+    return `<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="white-space:nowrap">${dt}</td>
+      <td><span class="tag" style="background:var(--bg3)">${d.lang?.toUpperCase()||'?'}</span></td>
+      <td><span class="tag" style="background:${cfg.badgeBg};color:${cfg.badgeColor}">${lbl}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${d.result.riskScore||0}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.msg}</td>
+      <td style="text-align:center">${fb}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV(){
+  const rows=[['#','Time','Lang','Verdict','RiskScore','Message','Feedback','Summary']];
+  DB.forEach((d,i)=>{
+    rows.push([i+1,d.time,d.lang||'',d.result.verdict,d.result.riskScore||0,
+      '"'+d.msg.replace(/"/g,'""')+'"', d.feedback||'', '"'+(d.result.summary||'').replace(/"/g,'""')+'"']);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  download('smishguard_dataset.csv','text/csv',csv);
+}
+function exportJSON(){ download('smishguard_dataset.json','application/json',JSON.stringify(DB,null,2)); }
+function download(name,type,data){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([data],{type}));
+  a.download=name; a.click();
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard(){
+  const l = t();
+  const total  = DB.length;
+  const scams  = DB.filter(d=>d.result.verdict==='LIKELY_SCAM').length;
+  const susp   = DB.filter(d=>d.result.verdict==='SUSPICIOUS').length;
+  const safe   = DB.filter(d=>d.result.verdict==='SAFE').length;
+  const fbAll  = DB.filter(d=>d.feedback);
+  const fbCorr = DB.filter(d=>d.feedback==='correct').length;
+  const acc    = fbAll.length ? Math.round(fbCorr/fbAll.length*100) : 0;
+
+  document.getElementById('stats-grid').innerHTML = [
+    {icon:'ti-messages',val:total,lbl:l.statTotal,color:'var(--accent)'},
+    {icon:'ti-alert-triangle',val:scams,lbl:l.statScam,color:'var(--danger)'},
+    {icon:'ti-circle-check',val:safe,lbl:l.statSafe,color:'var(--success)'},
+    {icon:'ti-chart-bar',val:acc+'%',lbl:l.statAccuracy,color:'var(--warning)'}
+  ].map(s=>`<div class="stat-card">
+    <div class="stat-icon" style="color:${s.color}"><i class="ti ${s.icon}"></i></div>
+    <div class="stat-val" style="color:${s.color}">${s.val}</div>
+    <div class="stat-lbl">${s.lbl}</div>
+  </div>`).join('');
+
+  // Donut
+  drawDonut(scams,susp,safe,total);
+
+  // Lang bar
+  const langs = {};
+  DB.forEach(d=>{ const k=d.lang||'?'; langs[k]=(langs[k]||0)+1; });
+  const langNames={mn:'🇲🇳 Монгол',en:'🇬🇧 English',zh:'🇨🇳 中文'};
+  document.getElementById('lang-chart').innerHTML =
+    Object.entries(langs).map(([k,v])=>{
+      const pct=total?Math.round(v/total*100):0;
+      return `<div class="bar-row">
+        <span class="bar-lbl">${langNames[k]||k}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+        <span class="bar-val">${v}</span>
+      </div>`;
+    }).join('')||'<div style="color:var(--text3);font-size:13px">Өгөгдөл байхгүй</div>';
+
+  // Feedback bar
+  const corr=DB.filter(d=>d.feedback==='correct').length;
+  const incorr=DB.filter(d=>d.feedback==='incorrect').length;
+  const nofb=DB.filter(d=>!d.feedback).length;
+  document.getElementById('feedback-chart').innerHTML = [
+    {lbl:'✓ Зөв',v:corr,c:'var(--success)'},
+    {lbl:'✗ Буруу',v:incorr,c:'var(--danger)'},
+    {lbl:'— Үнэлгээ өгөөгүй',v:nofb,c:'var(--text3)'}
+  ].map(b=>{
+    const pct=total?Math.round(b.v/total*100):0;
+    return `<div class="bar-row">
+      <span class="bar-lbl">${b.lbl}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${b.c}"></div></div>
+      <span class="bar-val">${b.v}</span>
+    </div>`;
+  }).join('');
+}
+
+function drawDonut(scams,susp,safe,total){
+  const canvas=document.getElementById('donutChart');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,120,120);
+  const data=[
+    {val:scams,color:'#f04f4f'},
+    {val:susp, color:'#f5a623'},
+    {val:safe, color:'#3ecf8e'}
+  ];
+  if(!total){
+    ctx.beginPath();ctx.arc(60,60,50,0,Math.PI*2);
+    ctx.strokeStyle='#1a2035';ctx.lineWidth=18;ctx.stroke();
+    document.getElementById('donut-legend').innerHTML='<div style="color:var(--text3);font-size:12px">Өгөгдөл байхгүй</div>';
+    return;
+  }
+  let start=-Math.PI/2;
+  data.forEach(d=>{
+    if(!d.val)return;
+    const slice=d.val/total*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(60,60);
+    ctx.arc(60,60,50,start,start+slice);
+    ctx.closePath();ctx.fillStyle=d.color;ctx.fill();
+    start+=slice;
+  });
+  ctx.beginPath();ctx.arc(60,60,32,0,Math.PI*2);
+  ctx.fillStyle='#131826';ctx.fill();
+  ctx.fillStyle='var(--text)';ctx.font='bold 14px IBM Plex Mono';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(total,60,60);
+
+  const labels=['Луйвар','Сэжигтэй','Аюулгүй'];
+  document.getElementById('donut-legend').innerHTML=data.map((d,i)=>
+    `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span>${labels[i]}: ${d.val}</div>`
+  ).join('');
+}
+// ══════════════════════════════════════════════
+//  BATCH EXPERIMENT
+// ══════════════════════════════════════════════
+let BATCH_RESULTS = { zero: [], few: [] };
+
+const SAMPLE_DATASET = [
+  // LIKELY_SCAM мессежүүд
+  {msg:'Таны банкны данс түдгэлзүүлэгдлээ. Шууд баталгаажуулна уу: http://golomt-bank-secure.tk/verify', label:'LIKELY_SCAM'},
+  {msg:'БАЯР ХҮРГЭЕ! Та 5,000,000₮ хожлоо! Хожлоо авахын тулд: bit.ly/mn-winner-2024', label:'LIKELY_SCAM'},
+  {msg:'Таны карт блоклогдлоо. 24 цагийн дотор баталгаажуулахгүй бол данс хаагдана: http://khanbank.verify.tk', label:'LIKELY_SCAM'},
+  {msg:'Хандив болгож байна! Таны дансны мэдээллийг оруулна уу: http://mongolia-aid.tk', label:'LIKELY_SCAM'},
+  {msg:'Та MNT 2,500,000 хожлоо! Мэдээллээ баталгаажуулах: https://mn-lucky.win/claim', label:'LIKELY_SCAM'},
+  {msg:'Таны эрүүл мэндийн даатгалд алдаа гарлаа. Шинэчлэхийн тулд дарна уу: http://ndaatgal.mn.verify.cc', label:'LIKELY_SCAM'},
+  {msg:'Urgently: your account will be closed. Confirm now: http://secure-mn-bank.tk/verify', label:'LIKELY_SCAM'},
+  {msg:'Та тусгай урамшуулалд сонгогдлоо! 72 цагийн дотор: http://mnprize.cc/get', label:'LIKELY_SCAM'},
+  // SUSPICIOUS мессежүүд
+  {msg:'Таны захиалга баталгаажлаа. Дэлгэрэнгүй мэдээлэл авахыг хүсвэл энд дарна уу.', label:'SUSPICIOUS'},
+  {msg:'Шинэ нэвтрэлт илэрлээ. Та биш бол 7711XXXX дугаарт холбоо барина уу.', label:'SUSPICIOUS'},
+  {msg:'Таны нууц үг шинэчлэгдлээ. Хэрэв та хийгээгүй бол дараах дугаарт залгана уу: 77001234', label:'SUSPICIOUS'},
+  {msg:'Таны дансанд шинэ гүйлгээ хийгдлээ. Дэлгэрэнгүйг апп дээрээс шалгана уу.', label:'SUSPICIOUS'},
+  {msg:'Delivery failed. Click to reschedule: t.co/rescheduleMN', label:'SUSPICIOUS'},
+  {msg:'Таны хүргэлт хийгдлээ. Хаалганд тавьсан. Хэрэв аваагүй бол холбоо барина уу.', label:'SUSPICIOUS'},
+  // SAFE мессежүүд
+  {msg:'Сайн байна уу? Маргааш уулзах боломжтой юу? Цайны газар очицгооё.', label:'SAFE'},
+  {msg:'Хичээл 10 цагт эхэлнэ. Оройтохгүй ирнэ үү.', label:'SAFE'},
+  {msg:'Ээж, оройн хоол идсэн үү? Би орой очино.', label:'SAFE'},
+  {msg:'Тайлан маргааш 17:00 цагт хүргэнэ. Баярлалаа.', label:'SAFE'},
+  {msg:'Нийтийн тээврийн 11-р чиглэл маргаашаас хуваарь өөрчлөгдөнө.', label:'SAFE'},
+  {msg:'Таны захиалсан ном ирлээ. Номын санд ирж авна уу.', label:'SAFE'},
+  {msg:'Уулзалт 14:00 цагт, 3-р давхрын хурлын өрөөнд болно.', label:'SAFE'},
+  {msg:'Your package has been delivered to the front door.', label:'SAFE'},
+  {msg:'Meeting confirmed for tomorrow at 2pm.', label:'SAFE'},
+  {msg:'Reminder: your appointment is on Friday at 10am.', label:'SAFE'},
+];
+
+function loadSampleDataset(){
+  const csv = 'мессеж,жинхэнэ_шошго\n' + SAMPLE_DATASET.map(d=>
+    `"${d.msg.replace(/"/g,'""')}",${d.label}`
+  ).join('\n');
+  document.getElementById('batchInput').value = csv;
+  updateDatasetCount();
+}
+
+function loadCSV(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('batchInput').value = e.target.result;
+    updateDatasetCount();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const ta = document.getElementById('batchInput');
+  if(ta) ta.addEventListener('input', updateDatasetCount);
+});
+
+function updateDatasetCount(){
+  const rows = parseCSV(document.getElementById('batchInput').value);
+  document.getElementById('dataset-count').textContent = `Мессеж: ${rows.length}`;
+}
+
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const rows = [];
+  for(let i=0; i<lines.length; i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+    // skip header
+    if(i===0 && (line.toLowerCase().includes('мессеж') || line.toLowerCase().includes('message'))) continue;
+    // simple CSV parse with quoted fields
+    const parts = [];
+    let cur='', inQ=false;
+    for(let c=0; c<line.length; c++){
+      if(line[c]==='"'){ inQ=!inQ; }
+      else if(line[c]===',' && !inQ){ parts.push(cur); cur=''; }
+      else cur+=line[c];
+    }
+    parts.push(cur);
+    if(parts.length>=2){
+      const msg = parts[0].trim();
+      const label = parts[parts.length-1].trim().toUpperCase();
+      if(msg && ['LIKELY_SCAM','SUSPICIOUS','SAFE'].includes(label)){
+        rows.push({msg, label});
+      }
+    }
+  }
+  return rows;
+}
+
+async function runBatch(){
+  const rows = parseCSV(document.getElementById('batchInput').value);
+  if(!rows.length){ alert('Өгөгдөл оруулна уу!'); return; }
+  const key = getKey();
+  if(!key||!key.startsWith('sk-ant-')){ showPage('settings'); alert('API түлхүүр оруулна уу!'); return; }
+
+  const modeVal = document.getElementById('batch-mode-sel').value;
+  const modes = modeVal === 'both' ? ['zero','few'] : [modeVal];
+
+  document.getElementById('batchRunBtn').disabled = true;
+  document.getElementById('batch-results-wrap').style.display = 'none';
+  document.getElementById('batch-progress-wrap').style.display = 'block';
+  BATCH_RESULTS = { zero:[], few:[] };
+
+  const total = rows.length * modes.length;
+  let done = 0;
+  const startTime = Date.now();
+
+  for(const mode of modes){
+    for(let i=0; i<rows.length; i++){
+      const row = rows[i];
+      const pct = Math.round(done/total*100);
+      document.getElementById('batch-progress-bar').style.width = pct+'%';
+      document.getElementById('batch-progress-pct').textContent = pct+'%';
+      document.getElementById('batch-progress-text').textContent =
+        `[${mode.toUpperCase()}] ${i+1}/${rows.length} — "${row.msg.slice(0,40)}..."`;
+
+      if(done>0){
+        const elapsed = (Date.now()-startTime)/1000;
+        const remaining = Math.round(elapsed/done*(total-done));
+        document.getElementById('batch-eta').textContent = `Үлдсэн хугацаа: ~${remaining}с`;
+      }
+
+      try{
+        const sysPrompt = T.mn.systemPrompt(mode);
+        const resp = await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'x-api-key': key,
+            'anthropic-version':'2023-06-01',
+            'anthropic-dangerous-direct-browser-access':'true'
+          },
+          body: JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:500,
+            system: sysPrompt,
+            messages:[{role:'user',content:`Classify this message:\n\n"${row.msg}"`}]
+          })
+        });
+        const data = await resp.json();
+        let raw = (data.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+        const result = JSON.parse(raw);
+        BATCH_RESULTS[mode].push({ msg: row.msg, trueLabel: row.label, predicted: result.verdict, score: result.riskScore||0, summary: result.summary||'' });
+      } catch(e){
+        BATCH_RESULTS[mode].push({ msg: row.msg, trueLabel: row.label, predicted: 'ERROR', score:0, summary:'' });
+      }
+      done++;
+      // Rate limit buffer
+      await new Promise(r=>setTimeout(r,700));
+    }
+  }
+
+  document.getElementById('batch-progress-bar').style.width = '100%';
+  document.getElementById('batch-progress-pct').textContent = '100%';
+  document.getElementById('batch-progress-text').textContent = 'Дуусгалаа!';
+  document.getElementById('batch-eta').textContent = '';
+  document.getElementById('batchRunBtn').disabled = false;
+
+  renderBatchResults(modes, modeVal==='both');
+}
+
+function calcMetrics(results){
+  const classes = ['LIKELY_SCAM','SUSPICIOUS','SAFE'];
+  let tp_total=0, fp_total=0, fn_total=0;
+  const cm = {};
+  classes.forEach(a=>{ cm[a]={}; classes.forEach(b=>cm[a][b]=0); });
+
+  results.forEach(r=>{
+    if(r.predicted==='ERROR') return;
+    const t=r.trueLabel, p=r.predicted;
+    if(cm[t]&&cm[t][p]!==undefined) cm[t][p]++;
+  });
+
+  const valid = results.filter(r=>r.predicted!=='ERROR');
+  const correct = valid.filter(r=>r.trueLabel===r.predicted).length;
+  const accuracy = valid.length ? (correct/valid.length*100).toFixed(1) : 0;
+
+  classes.forEach(cls=>{
+    const tp = cm[cls][cls]||0;
+    const fp = classes.reduce((s,c)=>s+(c!==cls?(cm[c][cls]||0):0),0);
+    const fn = classes.reduce((s,c)=>s+(c!==cls?(cm[cls][c]||0):0),0);
+    tp_total+=tp; fp_total+=fp; fn_total+=fn;
+  });
+
+  const precision = tp_total+fp_total ? (tp_total/(tp_total+fp_total)*100).toFixed(1) : 0;
+  const recall    = tp_total+fn_total ? (tp_total/(tp_total+fn_total)*100).toFixed(1) : 0;
+  const f1 = (precision>0&&recall>0)
+    ? (2*precision*recall/(+precision + +recall)).toFixed(1) : 0;
+
+  return { accuracy, precision, recall, f1, cm, total: valid.length, correct };
+}
+
+function renderMetricGrid(gridId, metrics){
+  const items=[
+    {icon:'ti-chart-bar',val:metrics.accuracy+'%',lbl:'Нарийвчлал (Accuracy)',color:'var(--accent)'},
+    {icon:'ti-crosshair',val:metrics.precision+'%',lbl:'Precision',color:'var(--success)'},
+    {icon:'ti-antenna',val:metrics.recall+'%',lbl:'Recall',color:'var(--warning)'},
+    {icon:'ti-star',val:metrics.f1+'%',lbl:'F1-Score',color:'var(--danger)'},
+  ];
+  document.getElementById(gridId).innerHTML = items.map(s=>`
+    <div class="stat-card">
+      <div class="stat-icon" style="color:${s.color}"><i class="ti ${s.icon}"></i></div>
+      <div class="stat-val" style="color:${s.color}">${s.val}</div>
+      <div class="stat-lbl">${s.lbl}</div>
+    </div>`).join('');
+}
+
+function renderCM(containerId, cm){
+  const classes=['LIKELY_SCAM','SUSPICIOUS','SAFE'];
+  const labels={LIKELY_SCAM:'Луйвар',SUSPICIOUS:'Сэжигтэй',SAFE:'Аюулгүй'};
+  let html=`<table class="cm-table"><thead><tr><th>Жинхэнэ \\ Таамаглал</th>`;
+  classes.forEach(c=>html+=`<th>${labels[c]}</th>`);
+  html+='</tr></thead><tbody>';
+  classes.forEach(t=>{
+    html+=`<tr><th style="text-align:left">${labels[t]}</th>`;
+    classes.forEach(p=>{
+      const v=cm[t]?.[p]||0;
+      const cls=t===p?'cm-cell-match':(v>0?'cm-cell-miss':'');
+      html+=`<td class="${cls}">${v}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById(containerId).innerHTML=html;
+}
+
+function renderBatchResults(modes, isBoth){
+  document.getElementById('batch-results-wrap').style.display='block';
+
+  modes.forEach(mode=>{
+    const m = calcMetrics(BATCH_RESULTS[mode]);
+    document.getElementById(`batch-metrics-${mode}`).style.display='block';
+    renderMetricGrid(`metrics-${mode}-grid`, m);
+    document.getElementById(`cm-${mode}-wrap`).style.display='block';
+    renderCM(`cm-${mode}`, m.cm);
+  });
+
+  // Харьцуулалт
+  if(isBoth){
+    document.getElementById('compare-table-wrap').style.display='block';
+    const mz=calcMetrics(BATCH_RESULTS.zero), mf=calcMetrics(BATCH_RESULTS.few);
+    const rows=[
+      ['Accuracy (%)', mz.accuracy, mf.accuracy],
+      ['Precision (%)', mz.precision, mf.precision],
+      ['Recall (%)', mz.recall, mf.recall],
+      ['F1-Score (%)', mz.f1, mf.f1],
+    ];
+    document.getElementById('compare-body').innerHTML = rows.map(([lbl,z,f])=>{
+      const diff=(+f - +z).toFixed(1);
+      const color=diff>0?'var(--success)':diff<0?'var(--danger)':'var(--text3)';
+      const sign=diff>0?'+':'';
+      return `<tr>
+        <td style="font-weight:500">${lbl}</td>
+        <td style="font-family:'IBM Plex Mono',monospace">${z}</td>
+        <td style="font-family:'IBM Plex Mono',monospace">${f}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;color:${color}">${sign}${diff}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Дэлгэрэнгүй хүснэгт
+  const hasZero=modes.includes('zero'), hasFew=modes.includes('few');
+  document.getElementById('bdt-zero-head').style.display=hasZero?'':'none';
+  document.getElementById('bdt-few-head').style.display=hasFew?'':'none';
+  const labels={LIKELY_SCAM:'Луйвар',SUSPICIOUS:'Сэжигтэй',SAFE:'Аюулгүй',ERROR:'Алдаа'};
+  const cfg2={LIKELY_SCAM:{bg:'rgba(240,79,79,0.12)',c:'#f47a7a'},SUSPICIOUS:{bg:'rgba(245,166,35,0.12)',c:'#f5c060'},SAFE:{bg:'rgba(62,207,142,0.12)',c:'#3ecf8e'},ERROR:{bg:'var(--bg3)',c:'var(--text3)'}};
+  const baseRows = BATCH_RESULTS[modes[0]];
+  document.getElementById('batch-detail-body').innerHTML = baseRows.map((r,i)=>{
+    const tc=cfg2[r.trueLabel]||cfg2.ERROR;
+    let row=`<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.msg}</td>
+      <td><span class="tag" style="background:${tc.bg};color:${tc.c}">${labels[r.trueLabel]||r.trueLabel}</span></td>`;
+    if(hasZero){
+      const zr=BATCH_RESULTS.zero[i]; const zc=cfg2[zr?.predicted]||cfg2.ERROR;
+      const ok=zr?.predicted===r.trueLabel;
+      row+=`<td><span class="tag" style="background:${zc.bg};color:${zc.c}">${labels[zr?.predicted]||'—'}</span>
+        <span class="metric-chip ${ok?'correct-chip':'wrong-chip'}" style="margin-left:4px">${ok?'✓':'✗'}</span></td>`;
+    }
+    if(hasFew){
+      const fr=BATCH_RESULTS.few[i]; const fc=cfg2[fr?.predicted]||cfg2.ERROR;
+      const ok=fr?.predicted===r.trueLabel;
+      row+=`<td><span class="tag" style="background:${fc.bg};color:${fc.c}">${labels[fr?.predicted]||'—'}</span>
+        <span class="metric-chip ${ok?'correct-chip':'wrong-chip'}" style="margin-left:4px">${ok?'✓':'✗'}</span></td>`;
+    }
+    row+='</tr>';
+    return row;
+  }).join('');
+}
+
+function exportBatchCSV(){
+  const modes=Object.keys(BATCH_RESULTS).filter(m=>BATCH_RESULTS[m].length);
+  if(!modes.length){ alert('Туршилтын үр дүн байхгүй байна.'); return; }
+  const header=['#','Мессеж','Жинхэнэ шошго'];
+  modes.forEach(m=>header.push(`${m} таамаглал`,`${m} оноо`,`${m} зөв эсэх`));
+  const rows=[header];
+  const base=BATCH_RESULTS[modes[0]];
+  base.forEach((r,i)=>{
+    const row=[i+1,`"${r.msg.replace(/"/g,'""')}"`,r.trueLabel];
+    modes.forEach(m=>{
+      const d=BATCH_RESULTS[m][i];
+      row.push(d?.predicted||'',d?.score||0,d?.predicted===r.trueLabel?'TRUE':'FALSE');
+    });
+    rows.push(row);
+  });
+  download('batch_experiment_results.csv','text/csv',rows.map(r=>r.join(',')).join('\n'));
+}
+</script>
+</body>
+</html>
