@@ -229,6 +229,10 @@ textarea::placeholder{color:var(--text3);}
 .metric-chip{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
 .correct-chip{background:rgba(62,207,142,0.15);color:var(--success);}
 .wrong-chip{background:rgba(240,79,79,0.12);color:var(--danger);}
+.fb-reason-btn{width:100%;text-align:left;padding:7px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;}
+.fb-reason-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2);}
+.fb-reason-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,0.08);}
+.learning-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--success);background:var(--success-bg);border:1px solid rgba(62,207,142,0.2);border-radius:6px;padding:3px 8px;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -239,8 +243,8 @@ textarea::placeholder{color:var(--text3);}
   <div class="brand">
     <div class="brand-icon"><i class="ti ti-shield-exclamation"></i></div>
     <div>
-      <div class="brand-name">Гэрэлт</div>
-      <div class="brand-ver">Бакалаврын дипломын туршилт</div>
+      <div class="brand-name">SmishGuard</div>
+      <div class="brand-ver">v2.0 · Дипломын судалгаа</div>
     </div>
   </div>
 
@@ -340,10 +344,27 @@ textarea::placeholder{color:var(--text3);}
         <button class="fb-btn" id="fb-yes" onclick="sendFeedback('correct')">
           <i class="ti ti-thumb-up"></i> <span id="fb-yes-text">Зөв</span>
         </button>
-        <button class="fb-btn" id="fb-no" onclick="sendFeedback('incorrect')">
+        <button class="fb-btn" id="fb-no" onclick="openFeedbackModal()">
           <i class="ti ti-thumb-down"></i> <span id="fb-no-text">Буруу</span>
         </button>
         <span class="fb-sent" id="fb-sent"><i class="ti ti-check"></i> <span id="fb-sent-text">Баярлалаа!</span></span>
+      </div>
+      <!-- Feedback reason modal -->
+      <div id="fb-modal" style="display:none;margin-top:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Яагаад буруу гэж үзэв?</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;" id="fb-reason-btns">
+          <button class="fb-reason-btn" onclick="selectReason('Энэ бол жинхэнэ банк/операторын мессеж байсан')">🏦 Жинхэнэ банк/операторын мессеж байсан</button>
+          <button class="fb-reason-btn" onclick="selectReason('OTP баталгаажуулах мессеж байсан — луйвар биш')">🔐 OTP баталгаажуулах мессеж байсан</button>
+          <button class="fb-reason-btn" onclick="selectReason('Итгэмжлэгдсэн домэйн байсан ч луйвар гэж дүгнэсэн')">🔗 Итгэмжлэгдсэн домэйн байсан</button>
+          <button class="fb-reason-btn" onclick="selectReason('Аюулгүй мессежийг луйвар гэж дүгнэсэн')">✅ Аюулгүй мессежийг буруу дүгнэсэн</button>
+          <button class="fb-reason-btn" onclick="selectReason('Луйвар мессежийг аюулгүй гэж дүгнэсэн')">⚠️ Луйварыг аюулгүй гэж дүгнэсэн</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Нэмэлт тайлбар (заавал биш):</div>
+        <textarea id="fb-custom-text" style="min-height:60px;font-size:12px;margin-bottom:8px;" placeholder="Тайлбар бичнэ үү..."></textarea>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-primary" onclick="submitFeedbackReason()" style="font-size:12px;padding:6px 14px;">Илгээх</button>
+          <button class="btn" onclick="closeFeedbackModal()" style="font-size:12px;padding:6px 14px;">Болих</button>
+        </div>
       </div>
     </div>
   </div>
@@ -622,6 +643,12 @@ golomtbank.mn, golomt.mn, khanbank.com, tdb.mn, xacbank.mn, statebank.mn,
 mongolbank.mn, mbank.mn, e-mongolia.mn, egazar.gov.mn, most.mn, play.google.com,
 apps.apple.com, appstore.com
 
+OTP / БАТАЛГААЖУУЛАХ КОД — МАШ ЧУХАЛ ДҮРЭМ:
+— Банк эсвэл байгууллагаас ИЛГЭЭСЭН баталгаажуулах код (OTP) нь SAFE байдаг
+— "Batalgaajuulax kod", "баталгаажуулах код", "нэг удаагийн код" гэсэн мессеж нь хэрэглэгч өөрөө үйлдэл хийснээс үүдсэн хариу тул SAFE
+— "Kodoo busdad buu damjuul" / "кодоо бусдад бүү дамжуул" гэсэн анхааруулга нь БАНКНААС ХАМГААЛАХ ЗОРИЛГООР БИЧСЭН — энэ нь луйврын шинж биш, харин аюулгүй байдлын зөвлөгөө
+— Харин хэрэглэгчээс OTP код ШААРДАХ мессеж (жишээ: "таны OTP кодоо бидэнд илгээнэ үү") бол LIKELY_SCAM
+
 МОНГОЛЫН МОБАЙЛ ОПЕРАТОРУУДЫН ЕРДИЙН МЭДЭГДЛҮҮД (ихэвчлэн SAFE):
 — Дата багц идэвхжилт, данснаас хасагдлын мэдэгдэл
 — Үлдэгдэл, тарифын мэдэгдэл
@@ -655,6 +682,9 @@ SIGNALS БИЧИХ ДҮРЭМ — дараах загваруудыг ЗААВА
 [HAM]  "Танд 3GB дата багц идэвхжилээ. Үлдэгдлээ mobicom app-аар шалгана уу. https://mobicom-brand-application.web.app/" → SAFE
 [SPAM] "Та 1,000,000₮ хожлоо! bit.ly/win2024" → LIKELY_SCAM
 [HAM]  "Хичээл 10 цагт эхэлнэ." → SAFE
+[HAM]  "ArigBank: Batalgaajuulax kod 447036. TAN kodoo aldah ni tani medeeleliin ayulgui baidald ersdeltei. Kodoo busdad buu damjuul" → SAFE
+[HAM]  "Таны баталгаажуулах код: 382910. Кодоо хэнд ч бүү мэдэгдээрэй." → SAFE
+[SPAM] "Таны OTP кодыг бидэнд илгээнэ үү. Банкны ажилтан холбогдож байна." → LIKELY_SCAM
 [SUSPICIOUS] "Таны нууц үгийг шинэчлэх шаардлагатай. https://mongol-secure-login.com" → LIKELY_SCAM` : '';
 
       return base + fewShot + `
@@ -940,7 +970,7 @@ async function analyze(){
   document.getElementById('fb-yes').classList.remove('selected');
   document.getElementById('fb-no').classList.remove('selected');
 
-  const sysPrompt = t().systemPrompt(currentMode);
+  const sysPrompt = t().systemPrompt(currentMode) + buildLearningContext();
 
   try{
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
@@ -1043,19 +1073,86 @@ function showResult(r, msg){
 // ══════════════════════════════════════════════
 //  FEEDBACK / LEARNING
 // ══════════════════════════════════════════════
-function sendFeedback(type){
+// Суралцах санах ой: хэрэглэгчийн тайлбар дараагийн промптод нэмэгдэнэ
+let LEARNED_CORRECTIONS = [];
+let selectedFbReason = '';
+
+function sendFeedback(type, reason){
   if(!currentResult) return;
   currentResult.feedback = type;
-  // Update in DB
+  currentResult.feedbackReason = reason||'';
+
   const idx = DB.findIndex(d=>d.time===currentResult.time);
-  if(idx>-1){ DB[idx].feedback=type; saveDB(); }
-  // Update session
+  if(idx>-1){ DB[idx].feedback=type; DB[idx].feedbackReason=reason||''; saveDB(); }
   const si = SESSION_HISTORY.findIndex(d=>d.time===currentResult.time);
-  if(si>-1) SESSION_HISTORY[si].feedback=type;
+  if(si>-1){ SESSION_HISTORY[si].feedback=type; SESSION_HISTORY[si].feedbackReason=reason||''; }
+
+  // Буруу дүгнэлт бол суралцах санд нэмэх
+  if(type==='incorrect' && reason){
+    LEARNED_CORRECTIONS.push({
+      msg: currentResult.msg,
+      wrongVerdict: currentResult.result.verdict,
+      reason: reason,
+      time: new Date().toISOString()
+    });
+    // Санах ойг хамгийн сүүлийн 10-оор хязгаарлах
+    if(LEARNED_CORRECTIONS.length>10) LEARNED_CORRECTIONS.shift();
+    // Badge харуулах
+    showLearningBadge();
+  }
 
   document.getElementById('fb-yes').classList.toggle('selected', type==='correct');
   document.getElementById('fb-no').classList.toggle('selected',  type==='incorrect');
   document.getElementById('fb-sent').style.display='inline-flex';
+}
+
+function openFeedbackModal(){
+  document.getElementById('fb-modal').style.display='block';
+  document.getElementById('fb-no').classList.add('selected');
+  selectedFbReason='';
+  document.getElementById('fb-custom-text').value='';
+  document.querySelectorAll('.fb-reason-btn').forEach(b=>b.classList.remove('selected'));
+}
+
+function closeFeedbackModal(){
+  document.getElementById('fb-modal').style.display='none';
+  document.getElementById('fb-no').classList.remove('selected');
+}
+
+function selectReason(reason){
+  selectedFbReason = reason;
+  document.querySelectorAll('.fb-reason-btn').forEach(b=>{
+    b.classList.toggle('selected', b.textContent.trim().includes(reason.slice(2,15)));
+  });
+}
+
+function submitFeedbackReason(){
+  const custom = document.getElementById('fb-custom-text').value.trim();
+  const reason = selectedFbReason + (custom ? ' — ' + custom : '');
+  sendFeedback('incorrect', reason||'Буруу дүгнэлт');
+  document.getElementById('fb-modal').style.display='none';
+}
+
+function showLearningBadge(){
+  let badge = document.getElementById('learning-badge');
+  if(!badge){
+    badge = document.createElement('div');
+    badge.id='learning-badge';
+    badge.className='learning-badge';
+    badge.innerHTML='<i class="ti ti-brain"></i> Суралцлаа — дараагийн шинжилгээнд тусгагдана';
+    const fbRow = document.querySelector('.feedback-row');
+    fbRow.parentNode.insertBefore(badge, fbRow);
+  }
+  badge.style.display='inline-flex';
+  setTimeout(()=>{ if(badge) badge.style.display='none'; }, 5000);
+}
+
+function buildLearningContext(){
+  if(!LEARNED_CORRECTIONS.length) return '';
+  const lines = LEARNED_CORRECTIONS.slice(-5).map(c=>
+    `Жишээ: "${c.msg.slice(0,80)}" → ${c.wrongVerdict} гэж дүгнэсэн нь БУРУУ байсан. Шалтгаан: ${c.reason}`
+  );
+  return '\n\nХЭРЭГЛЭГЧИЙН ЗАСВАРЛАСАН ЖИШЭЭНҮҮД (эдгээрийг заавал анхаарна уу):\n' + lines.join('\n');
 }
 
 // ══════════════════════════════════════════════
@@ -1357,7 +1454,7 @@ async function runBatch(){
       }
 
       try{
-        const sysPrompt = T.mn.systemPrompt(mode);
+        const sysPrompt = T.mn.systemPrompt(mode) + buildLearningContext();
         const resp = await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{
